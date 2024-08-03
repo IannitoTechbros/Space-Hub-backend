@@ -1,0 +1,59 @@
+# Ignore Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore SQLite database
+instance/
+instance/space.db
+
+# Ignore migrations' versions
+migrations/
+migrations/versions/
+
+# Ignore environment variables
+.env
+*.env
+
+# Ignore uploaded files
+uploads/
+
+# Ignore virtual environments
+venv/
+.env/
+env/
+ENV/
+
+# Ignore pipenv files
+Pipfile.lock
+
+# Ignore coverage reports
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# Ignore test reports
+junitxml.xml
+test-results/
+
+# Ignore local configuration files
+*.local
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore IDE/editor specific files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# Ignore macOS specific files
+.DS_Store
