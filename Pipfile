@@ -13,6 +13,8 @@ sqlalchemy-serializer = "*"
 flask-cors = "*"
 requests = "*"
 gunicorn = "*"
+pyscopg2 = "*"
+psycopg2-binary = "*"
 
 [dev-packages]
 
