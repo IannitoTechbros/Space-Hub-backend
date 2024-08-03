@@ -254,12 +254,10 @@ def mpesa_callback():
 
     result_code = data['Body']['stkCallback']['ResultCode']
     merchant_request_id = data['Body']['stkCallback']['MerchantRequestID']
-    checkout_request_id = data['Body']['stkCallback']['CheckoutRequestID']
     
     if result_code == 0:  # Successful payment
         mpesa_receipt_number = data['Body']['stkCallback']['CallbackMetadata']['Item'][1]['Value']
         
-        # Update the booking status
         booking = Booking.query.filter_by(id=merchant_request_id).first()
         if booking:
             booking.payment_status = 'completed'
@@ -268,7 +266,6 @@ def mpesa_callback():
             app.logger.info(f"Payment successful for booking ID {merchant_request_id}")
     
     return jsonify({'message': 'Callback received'}), 200
-
 
 @app.route('/booking/<int:booking_id>/status', methods=['GET'])
 @jwt_required()

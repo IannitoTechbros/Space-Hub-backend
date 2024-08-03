@@ -27,7 +27,7 @@ app.config['MPESA_CONSUMER_SECRET'] = 'DYx642cpA1Q16PWWrslFve1PhRIoogqR5DvvSuDWc
 app.config['MPESA_BUSINESS_SHORT_CODE'] = '174379'  
 app.config['MPESA_PASS_KEY'] = 'bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919'  
 app.config['MPESA_TRANSACTION_TYPE'] = 'CustomerPayBillOnline'
-app.config['MPESA_CALLBACK_URL'] = 'https://419b-102-213-93-29.ngrok-free.app/mpesa-callback' 
+app.config['MPESA_CALLBACK_URL'] = 'https://space-hub-backend-gphk.onrender.com/mpesa-callback'
 
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)

@@ -12,7 +12,7 @@ class User(db.Model, SerializerMixin):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), nullable=False, unique=True)
     password = db.Column(db.String(200), nullable=False)
-    role = db.Column(db.String(25), default='users')
+    role = db.Column(db.String(25), default='admin')
     
     @validates('email')
     def validate_email(self, key, address):
