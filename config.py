@@ -5,6 +5,7 @@ from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 import os
+import logging
 
 metadata = MetaData(
     naming_convention={
@@ -14,7 +15,6 @@ metadata = MetaData(
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
-#postgresql://spacehub_user:2YWZAEvmmnQ1yXTYP0KUVDFCrPUSHfUp@dpg-cqn940lds78s739a67vg-a.oregon-postgres.render.com/spacehub
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = '57f804c427f744988ae5e25ef4067a0c'
 app.config['JWT_SECRET_KEY'] = '12345'
@@ -35,3 +35,7 @@ jwt = JWTManager(app)
 db = SQLAlchemy(metadata=metadata)
 db.init_app(app)
 migrate = Migrate(app, db)
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)

@@ -1,7 +1,7 @@
 from config import *
 from flask_cors import CORS
 from models import User, Space, Booking
-from config import bcrypt
+from config import bcrypt, logger
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
 from flask import send_from_directory, request, jsonify, make_response
@@ -154,6 +154,7 @@ def delete_space(id):
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+
 def get_access_token():
     url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
     response = requests.get(url, auth=HTTPBasicAuth(app.config['MPESA_CONSUMER_KEY'], app.config['MPESA_CONSUMER_SECRET']))
@@ -161,7 +162,7 @@ def get_access_token():
     if response.status_code == 200:
         return response.json()['access_token']
     else:
-        print(f"Failed to get access token: {response.status_code}, {response.text}")
+        logger.error(f"Failed to get access token: {response.status_code}, {response.text}")
         return None
 
 def get_password():
@@ -201,7 +202,7 @@ def book_space(id):
     # Initiate M-Pesa payment
     access_token = get_access_token()
     if access_token:
-        print(f"Retrieved access token: {access_token}")
+        logger.info(f"Retrieved access token: {access_token}")
     else:
         return jsonify({'message': 'Failed to get access token for payment. Please try again.'}), 500
 
@@ -213,7 +214,7 @@ def book_space(id):
         "Password": password,
         "Timestamp": timestamp,
         "TransactionType": app.config['MPESA_TRANSACTION_TYPE'],
-        "Amount": int(total_amount),  # Ensure this is a valid integer
+        "Amount": int(total_amount),
         "PartyA": formatted_phone_number,
         "PartyB": app.config['MPESA_BUSINESS_SHORT_CODE'],
         "PhoneNumber": formatted_phone_number,
@@ -227,7 +228,7 @@ def book_space(id):
         "Content-Type": "application/json"
     }
 
-    print("Payload:", payload)  # Debug: Print the payload
+    logger.info(f"M-Pesa request payload: {payload}")
 
     response = requests.post(
         "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
@@ -236,44 +237,71 @@ def book_space(id):
     )
 
     if response.status_code == 200:
+        mpesa_response = response.json()
+        logger.info(f"M-Pesa response: {mpesa_response}")
+        
         # Save booking details
-        booking = Booking(user_id=user_id, space_id=id, hours=hours, total_amount=total_amount)
+        booking = Booking(
+            user_id=user_id, 
+            space_id=id, 
+            hours=hours, 
+            total_amount=total_amount,
+            merchant_request_id=mpesa_response.get('MerchantRequestID'),
+            checkout_request_id=mpesa_response.get('CheckoutRequestID')
+        )
         db.session.add(booking)
         db.session.commit()
-        print(f"Formatted Phone Number for Payment: {formatted_phone_number}")
-        return jsonify({'message': 'Payment initiated. Please check your phone to complete the transaction.', 'bookingId': booking.id}), 200
+        
+        logger.info(f"Booking created: {booking.id}, MerchantRequestID: {booking.merchant_request_id}")
+        return jsonify({
+            'message': 'Payment initiated. Please check your phone to complete the transaction.', 
+            'bookingId': booking.id
+        }), 200
     else:
-        print(f"Formatted Phone Number for Payment: {formatted_phone_number}")
-        print(f"Failed to initiate payment: {response.status_code}, {response.text}")
+        logger.error(f"Failed to initiate payment: {response.status_code}, {response.text}")
         return jsonify({'message': 'Failed to initiate payment. Please try again.'}), 400
 
 @app.route('/mpesa-callback', methods=['POST'])
 def mpesa_callback():
-    data = request.get_json()
-    app.logger.info(f"Callback data received: {data}")
+    try:
+        data = request.get_json()
+        logger.info(f"Callback data received: {data}")
 
-    result_code = data['Body']['stkCallback']['ResultCode']
-    merchant_request_id = data['Body']['stkCallback']['MerchantRequestID']
-    
-    if result_code == 0:  # Successful payment
-        mpesa_receipt_number = data['Body']['stkCallback']['CallbackMetadata']['Item'][1]['Value']
+        result_code = data['Body']['stkCallback']['ResultCode']
+        merchant_request_id = data['Body']['stkCallback']['MerchantRequestID']
         
-        booking = Booking.query.filter_by(id=merchant_request_id).first()
-        if booking:
+        booking = Booking.query.filter_by(merchant_request_id=merchant_request_id).first()
+        if not booking:
+            logger.error(f"No booking found for MerchantRequestID: {merchant_request_id}")
+            return jsonify({'message': 'Booking not found'}), 404
+
+        if result_code == 0:  # Successful payment
+            mpesa_receipt_number = data['Body']['stkCallback']['CallbackMetadata']['Item'][1]['Value']
+            
             booking.payment_status = 'completed'
             booking.mpesa_receipt_number = mpesa_receipt_number
             db.session.commit()
-            app.logger.info(f"Payment successful for booking ID {merchant_request_id}")
-    
-    return jsonify({'message': 'Callback received'}), 200
+            logger.info(f"Payment successful for booking ID {booking.id}")
+        else:
+            booking.payment_status = 'failed'
+            db.session.commit()
+            logger.info(f"Payment failed for booking ID {booking.id}")
+
+        return jsonify({'message': 'Callback processed successfully'}), 200
+
+    except Exception as e:
+        logger.error(f"Error in mpesa_callback: {str(e)}")
+        return jsonify({'message': 'Error processing callback'}), 500
 
 @app.route('/booking/<int:booking_id>/status', methods=['GET'])
 @jwt_required()
 def check_booking_status(booking_id):
     booking = Booking.query.get(booking_id)
     if not booking:
+        logger.warning(f"Booking not found: {booking_id}")
         return jsonify({'message': 'Booking not found'}), 404
     
+    logger.info(f"Booking status for ID {booking_id}: {booking.payment_status}")
     return jsonify({'status': booking.payment_status}), 200
 
 if __name__ == '__main__':

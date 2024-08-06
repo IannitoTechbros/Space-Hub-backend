@@ -22,7 +22,7 @@ class User(db.Model, SerializerMixin):
     
     def __repr__(self):
         return f'<User {self.name}>'
-    
+
 class Space(db.Model):
     __tablename__ = 'spaces'
     
@@ -49,6 +49,8 @@ class Booking(db.Model):
     booking_date = db.Column(db.DateTime, default=datetime.utcnow)
     payment_status = db.Column(db.String(20), default='pending')
     mpesa_receipt_number = db.Column(db.String(50), nullable=True)
+    merchant_request_id = db.Column(db.String(50), nullable=True)
+    checkout_request_id = db.Column(db.String(50), nullable=True)
     
     user = db.relationship('User', backref=db.backref('bookings', lazy=True))
     space = db.relationship('Space', backref=db.backref('bookings', lazy=True))
