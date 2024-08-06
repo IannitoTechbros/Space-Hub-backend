@@ -267,7 +267,7 @@ def mpesa_callback():
         data = request.get_json()
         logger.info(f"Callback data received: {data}")
 
-        result_code = data['Body']['stkCallback']['ResponseCode']
+        result_code = data['Body']['stkCallback']['ResultCode']
         merchant_request_id = data['Body']['stkCallback']['MerchantRequestID']
 
         
