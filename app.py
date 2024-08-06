@@ -281,6 +281,12 @@ def mpesa_callback():
     
             booking.payment_status = 'completed'
             booking.mpesa_receipt_number = mpesa_receipt_number
+
+            space = Space.query.get(booking.space_id)
+            
+            if space:
+                space.booked = True
+
             db.session.commit()
             logger.info(f"Payment successful for booking ID {booking.id}")
         else:
