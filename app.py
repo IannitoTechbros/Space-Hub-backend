@@ -282,8 +282,11 @@ def mpesa_callback():
             booking.payment_status = 'completed'
             booking.mpesa_receipt_number = mpesa_receipt_number
 
+            #update booked status
+
             space = Space.query.get(booking.space_id)
-            
+
+
             if space:
                 space.booked = True
 
