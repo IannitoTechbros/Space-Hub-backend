@@ -32,8 +32,7 @@ app.config['MPESA_CALLBACK_URL'] = 'https://space-hub-backend-gphk.onrender.com/
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
-db = SQLAlchemy(metadata=metadata)
-db.init_app(app)
+db = SQLAlchemy(app, metadata=metadata)  # Initialize with the app
 migrate = Migrate(app, db)
 
 # Set up logging

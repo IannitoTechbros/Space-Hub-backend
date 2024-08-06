@@ -30,16 +30,16 @@ def signup():
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
-    if not data or 'email' not in data or 'password' not in data:
-        return make_response(jsonify({'message': 'Email and password are required'}))
-
-    user = User.query.filter_by(email=data['email']).first()
-    if not user or not bcrypt.check_password_hash(user.password, data['password']):
-        return make_response(jsonify({'message': 'Invalid email or password'}), 401)
-
-    access_token = create_access_token(identity={'id': user.id, 'role': user.role}) 
-    return make_response(jsonify(access_token=access_token, user=user.to_dict()), 200)
-
+    try:
+        user = User.query.filter_by(email=data['email']).first()
+        if user and bcrypt.check_password_hash(user.password, data['password']):
+            access_token = create_access_token(identity={'id': user.id, 'role': user.role})
+            return make_response(jsonify(access_token=access_token, user=user.to_dict()), 200)
+        else:
+            return make_response(jsonify({'message': 'Invalid email or password'}), 401)
+    except Exception as e:
+        return make_response(jsonify({'message': f'Error logging in: {str(e)}'}), 500)
+    
 @app.route('/users', methods=['GET'])
 @jwt_required()
 def get_users():
@@ -267,8 +267,9 @@ def mpesa_callback():
         data = request.get_json()
         logger.info(f"Callback data received: {data}")
 
-        result_code = data['Body']['stkCallback']['ResultCode']
+        result_code = data['Body']['stkCallback']['ResponseCode']
         merchant_request_id = data['Body']['stkCallback']['MerchantRequestID']
+
         
         booking = Booking.query.filter_by(merchant_request_id=merchant_request_id).first()
         if not booking:
@@ -277,7 +278,7 @@ def mpesa_callback():
 
         if result_code == 0:  # Successful payment
             mpesa_receipt_number = data['Body']['stkCallback']['CallbackMetadata']['Item'][1]['Value']
-            
+    
             booking.payment_status = 'completed'
             booking.mpesa_receipt_number = mpesa_receipt_number
             db.session.commit()
