@@ -11,7 +11,10 @@ from requests.auth import HTTPBasicAuth
 import base64
 from datetime import datetime
 
-CORS(app, resources={r"/*": {"origins": ["http://localhost:3000"]}})
+CORS(app, resources={r"/*": {"origins": [
+    "http://localhost:3000",
+    "https://your-netlify-app-url.netlify.app"
+]}})
 
 @app.route('/signup', methods=['POST'])
 def signup():
@@ -285,8 +288,6 @@ def mpesa_callback():
             #update booked status
 
             space = Space.query.get(booking.space_id)
-
-
             if space:
                 space.booked = True
 
