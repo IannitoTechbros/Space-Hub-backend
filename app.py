@@ -13,7 +13,7 @@ from datetime import datetime
 
 CORS(app, resources={r"/*": {"origins": [
     "http://localhost:3000",
-    "https://your-netlify-app-url.netlify.app"
+    "https://spacehub2.netlify.app"
 ]}})
 
 @app.route('/signup', methods=['POST'])
